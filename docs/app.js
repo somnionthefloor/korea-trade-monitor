@@ -1,271 +1,351 @@
 "use strict";
 
 const companies = [
-  {
-    ticker: "003230", name: "삼양식품", products: [["1902301010", "인스턴트 라면"]],
-    mapping: "1902301010 · 인스턴트 라면",
-    places: [
-      ["강원특별자치도 원주시", "생산 거점 · 기존 TRASS 추적 지역"],
-      ["전북특별자치도 익산시", "생산 거점 · 기존 TRASS 추적 지역"],
-      ["경상남도 밀양시", "생산 거점 · 기존 TRASS 추적 지역"],
-      ["서울특별시 성북구", "과거 본사 소재지 · 기존 TRASS 추적 지역"]
-    ],
-    note: "삼성증권과 LS증권은 TRASS에서 이 네 지역을 추적했습니다. 최근 회사 IR의 본사는 서울 중구입니다. 최근 월은 성북구와 중구를 각각 조회해 변화 여부를 확인하세요.",
-    sources: [
-      ["삼양식품 2026년 3분기 IR", "https://www.samyangfoods.com/upload/ir/20261106/20261106163220244009.pdf"],
-      ["삼성증권 라면 수출 데이터북", "https://www.samsungpop.com/common.do?cmd=down&contentType=application%2Fpdf&fileName=2020%2F2026040114423788K_02_01.pdf&inlineYn=Y&saveKey=research.pdf"],
-      ["LS증권 지역별 라면 수출", "https://msg.ls-sec.co.kr/eum/K_20240816_31863_169.pdf"],
-      ["관세청 라면 품목분류", "https://unipass.customs.go.kr/clip/prlstclsfsrch/openULS0203003S.do?rrdcNo=0072019001201"]
-    ]
-  },
-  {
-    ticker: "214450", name: "파마리서치", products: [["3304999000", "기타화장품"]],
-    mapping: "3304999000 · 기타화장품",
-    places: [["강원특별자치도 강릉시", "생산 거점 · 증권사 추적 지역"]],
-    note: "강릉 × 3304999000은 증권사 리서치가 사용하는 리쥬란 관련 추정 지표입니다. 현재 그래프는 같은 HSK의 한국 전체 통계이며 강릉만의 수치와 리쥬란 개별 수치는 확인되지 않았습니다.",
-    sources: [
-      ["파마리서치 사업보고서", "https://pharmaresearch.co.kr/file_download.php?filename=9808450398.pdf&filepath=data"],
-      ["키움증권 강릉 수출 추적 근거", "https://bbn.kiwoom.com/rfCR11479"]
-    ]
-  },
-  {
-    ticker: "000660", name: "SK하이닉스", products: [["8542321010", "DRAM"], ["8542321030", "플래시 메모리"]],
-    mapping: "8542321010 · DRAM / 8542321030 · 플래시",
-    places: [
-      ["경기도 이천시", "생산 거점 · 품목별 귀속 검증 후보"],
-      ["충청북도 청주시", "생산 거점 · 품목별 귀속 검증 후보"]
-    ],
-    note: "이천·청주는 DRAM과 플래시 메모리의 지역별 금액을 각각 조회할 후보입니다. 월별 그래프는 삼성전자와 동일한 전국 산업 통계입니다. HBM과 회사별 금액은 별도 데이터가 필요합니다.",
-    sources: [
-      ["SK하이닉스 캠퍼스", "https://talent.skhynix.com/hub/ko/company/campus"],
-      ["관세청 메모리 품목분류", "https://unipass.customs.go.kr/clip/hsinfosrch/openULS0201005Q.do?searchVal=854232"]
-    ]
-  },
-  {
-    ticker: "005930", name: "삼성전자", products: [["8542321010", "DRAM"], ["8542321030", "플래시 메모리"]],
-    mapping: "8542321010 · DRAM / 8542321030 · 플래시",
-    places: [
-      ["경기도 평택시", "메모리 생산 · 우선 조회 후보"],
-      ["경기도 화성시", "반도체 생산·후공정 · 검증 후보"],
-      ["경기도 용인시 기흥구", "반도체 생산·후공정 · 검증 후보"],
-      ["충청남도 천안시 서북구", "메모리 후공정 · 추가 확인"],
-      ["충청남도 아산시", "온양 메모리 후공정 · 추가 확인"]
-    ],
-    note: "평택을 먼저 조회하고 화성·용인, 천안·아산은 별도로 확인하세요. TRASS에서 일반구를 제공하지 않으면 상위 시를 선택하세요. 월별 그래프는 SK하이닉스와 동일한 전국 산업 통계입니다.",
-    sources: [
-      ["삼성전자 2026년 3분기 사업보고서", "https://images.samsung.com/kdp/ir/business-report/2026_3Q_Interim_Business_Report_kr.pdf"],
-      ["삼성반도체 국내 사업장과 공정", "https://download.semiconductor.samsung.com/resources/others/Samsung_Electronics_ISO_45001.pdf"],
-      ["관세청 메모리 품목분류", "https://unipass.customs.go.kr/clip/hsinfosrch/openULS0201005Q.do?searchVal=854232"]
-    ]
-  }
+  {ticker: "003230", name: "삼양식품", products: [["1902301010", "인스턴트 라면"]]},
+  {ticker: "214450", name: "파마리서치", products: [["3304999000", "기타화장품"]]},
+  {ticker: "000660", name: "SK하이닉스", products: [["8542321010", "DRAM"], ["8542321030", "플래시 메모리"]]},
+  {ticker: "005930", name: "삼성전자", products: [["8542321010", "DRAM"], ["8542321030", "플래시 메모리"]]}
 ];
-
-const data = globalThis.TRADE_DATA ?? { series: {}, partners: {} };
+const data = globalThis.TRADE_DATA ?? {series: {}, partners: {}};
 const state = {
-  ticker: companies[0].ticker, product: companies[0].products[0][0], partner: "0", flow: "X", range: 12,
-  view: "monthly", metric: "amount", cutoff: "end", month: "", deciles: {}
+  ticker: companies[0].ticker, product: companies[0].products[0][0], partner: "0",
+  flow: "X", currency: "USD", grain: "month", tableGrain: "year", range: "12",
+  countryMode: "stack", view: "monthly", cutoff: "end", month: "", deciles: {}
 };
 const $ = id => document.getElementById(id);
 const company = () => companies.find(item => item.ticker === state.ticker);
 const series = () => data.series[state.product]?.months ?? {};
 const availableMonths = () => Object.keys(series()).sort().reverse();
-const money = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
-const mass = new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 });
-const decileHeader = "ticker,month,usd_10,usd_20,usd_end,scope,source";
+const latestFlow = () => state.flow === "X" ? "수출" : "수입";
+const selectedMonth = () => state.month || availableMonths()[0] || "";
+const country = code => data.partners[code] ?? (code === "0" ? "전체 국가" : code);
+const partnerCodes = Object.keys(data.partners).filter(code => code !== "0").sort((a, b) => country(a).localeCompare(country(b), "ko"));
+const money = new Intl.NumberFormat("ko-KR", {maximumFractionDigits: 0});
+const decimal = new Intl.NumberFormat("ko-KR", {maximumFractionDigits: 1});
+const price = new Intl.NumberFormat("ko-KR", {maximumFractionDigits: 2});
 const shades = ["#267c6a", "#477bd2", "#c07e40"];
-
+const countryColors = ["#2873c2", "#31a084", "#ba6b27", "#7a69ba", "#328dad", "#a8b4c3"];
+const decileHeader = "ticker,month,usd_10,usd_20,usd_end,scope,source";
+const compact = value => Number.isFinite(value) ? decimal.format(value) : "—";
+const format = (value, formatter = money) => Number.isFinite(value) ? formatter.format(value) : "—";
 const monthName = month => month ? month.slice(0, 4) + "." + month.slice(4) : "—";
-const monthShort = month => month.slice(2, 4) + "." + month.slice(4);
-const compact = value => value === null || !Number.isFinite(value) ? "—" : mass.format(value);
-const dollars = value => Number.isFinite(value) ? "$" + money.format(value) : "—";
+const monthShort = month => monthName(month).slice(2);
 const tone = value => value > 0 ? "up" : value < 0 ? "down" : "";
 const percent = value => Number.isFinite(value) ? (value > 0 ? "+" : "") + value.toFixed(1) + "%" : "—";
 const change = (now, before) => Number.isFinite(now) && Number.isFinite(before) && before > 0 ? (now / before - 1) * 100 : null;
-const valueFor = (month, partner = state.partner, metric = 0) => series()[month]?.[partner]?.[state.flow]?.[metric] ?? null;
-const selectedMonth = () => state.month || availableMonths()[0] || "";
-const latestFlow = () => state.flow === "X" ? "수출" : "수입";
-const country = code => data.partners[code] ?? (code === "0" ? "전체 국가" : code);
+const rate = month => data.fx?.rates[month] ?? null;
+const valueFor = (month, partner = state.partner) => series()[month]?.[partner]?.[state.flow];
+const amountIn = (usd, month, currency = state.currency) => {
+  if (!Number.isFinite(usd)) return null;
+  const multiplier = currency === "USD" ? 1 : rate(month);
+  return multiplier === null ? null : usd * multiplier;
+};
+
+function monthIndex(month) {
+  return Number(month.slice(0, 4)) * 12 + Number(month.slice(4)) - 1;
+}
 
 function offsetMonth(month, offset) {
-  const index = Number(month.slice(0, 4)) * 12 + Number(month.slice(4)) - 1 + offset;
+  const index = monthIndex(month) + offset;
   return String(Math.floor(index / 12)) + String(index % 12 + 1).padStart(2, "0");
 }
 
+function inclusiveMonths(start, end) {
+  return Array.from({length: Math.max(0, monthIndex(end) - monthIndex(start) + 1)}, (_, i) => offsetMonth(start, i));
+}
+
+function shownMonths(end, oldest) {
+  if (state.range === "all") return inclusiveMonths(oldest, end);
+  const requested = offsetMonth(end, 1 - Number(state.range));
+  return inclusiveMonths(requested > oldest ? requested : oldest, end);
+}
+
 function activeButtons(attribute, value) {
+  const key = attribute.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
   document.querySelectorAll("[data-" + attribute + "]").forEach(button => {
-    button.setAttribute("aria-pressed", button.dataset[attribute] === value);
+    button.setAttribute("aria-pressed", button.dataset[key] === value);
   });
 }
 
 function setSelect(select, items, selected) {
-  const options = items.map(([key, title]) => new Option(title, key));
-  select.replaceChildren(...options);
+  select.replaceChildren(...items.map(([key, title]) => new Option(title, key)));
   select.value = selected;
 }
 
-function drawHeader() {
-  const item = company();
-  activeButtons("ticker", state.ticker);
-  $("ticker").textContent = item.ticker;
-  $("company").textContent = item.name;
-  $("series-label").textContent = item.products.find(([code]) => code === state.product)[1] + " · HSK " + state.product;
-  $("company-scope").textContent = "전국 품목 합계 · " + monthName(availableMonths()[0]) + "까지";
-  $("mapping-caption").textContent = item.places.length + "개 국내 조회 지역";
-  $("mapping-body").innerHTML =
-    "<p><strong>세부 품목</strong> " + item.mapping + "</p>" +
-    "<p><strong>TRASS 시군구 기본형</strong> HS " + [...new Set(item.products.map(([code]) => code.slice(0, 6)))].join(" / ") + "</p>" +
-    '<ul class="places">' + item.places.map(([place, role]) =>
-      "<li><strong>" + place + "</strong><span>" + role + "</span></li>").join("") + "</ul>" +
-    "<p>" + item.note + "</p>" +
-    "<p>TRASS 상세조회 기본형에서 수출·수리일과 품목·국내지역을 선택하세요. 시군구를 선택하면 HS 6자리까지 조회할 수 있어 세부 HSK보다 범위가 넓습니다. 품목·국내지역·국가를 함께 선택하는 3개 항목은 프리미엄 메뉴입니다.</p>" +
-    '<p><a href="https://www.bandtrass.or.kr/customs/total.do?command=CUS001View&amp;viewCode=CUS00301" target="_blank" rel="noopener noreferrer">TRASS 상세조회 열기</a></p>' +
-    "<p>" + item.sources.map(([label, url]) => '<a href="' + url +
-    '" target="_blank" rel="noopener noreferrer">' + label + "</a>").join("") + "</p>";
+function summing(values) {
+  const valid = values.filter(Number.isFinite);
+  return valid.length ? valid.reduce((sum, value) => sum + value, 0) : null;
 }
 
-function shownMonths() {
-  const end = selectedMonth();
-  const oldest = availableMonths().at(-1);
-  if (!end) return [];
-  return Array.from({length: state.range}, (_, i) => offsetMonth(end, i + 1 - state.range))
-    .filter(month => month >= oldest);
-}
-
-function records() {
-  return shownMonths().map(month => {
-    const amount = valueFor(month);
-    return {
-      month, amount, weight: valueFor(month, state.partner, 1),
-      yoy: change(amount, valueFor(offsetMonth(month, -12))),
-      mom: change(amount, valueFor(offsetMonth(month, -1)))
-    };
+function aggregate(months, partner = state.partner, currency = state.currency) {
+  const table = series();
+  const validMonths = months.every(month => table[month]);
+  const values = months.map(month => {
+    const entry = table[month]?.[partner]?.[state.flow];
+    return [amountIn(entry?.[0], month, currency), entry?.[1]];
   });
+  const amount = validMonths ? summing(values.map(entry => entry[0])) : null;
+  const weight = validMonths ? summing(values.map(entry => entry[1])) : null;
+  return {amount, weight, price: amount !== null && weight > 0 ? amount / weight : null};
 }
 
-function scaleAmount(values) {
+function itemFor(months) {
+  const current = aggregate(months);
+  const former = aggregate(months.map(month => offsetMonth(month, -12)));
+  return {
+    ...current, months, yoy: change(current.amount, former.amount),
+    weightYoy: change(current.weight, former.weight), priceYoy: change(current.price, former.price)
+  };
+}
+
+function periods(months, grain) {
+  const groups = new Map();
+  for (const month of months) {
+    const year = month.slice(0, 4);
+    const key = grain === "month" ? monthName(month) :
+      grain === "quarter" ? year + " Q" + Math.ceil(Number(month.slice(4)) / 3) : year;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(month);
+  }
+  const full = {month: 1, quarter: 3, year: 12}[grain];
+  return [...groups].map(([label, items]) => ({
+    ...itemFor(items),
+    label: items.length === full ? label : label + " (" + Number(items[0].slice(-2)) + "–" + Number(items.at(-1).slice(-2)) + "월)",
+    tick: grain === "month" ? label.slice(2) : label
+  }));
+}
+
+function scaleAmount(values, currency = state.currency) {
   const max = Math.max(0, ...values.filter(Number.isFinite));
+  if (currency === "KRW") {
+    if (max >= 1e12) return [1e12, "조원"];
+    if (max >= 1e8) return [1e8, "억원"];
+    if (max >= 1e4) return [1e4, "만원"];
+    return [1, "원"];
+  }
   if (max >= 1e9) return [1e9, "십억 USD"];
   if (max >= 1e6) return [1e6, "백만 USD"];
   if (max >= 1e3) return [1e3, "천 USD"];
   return [1, "USD"];
 }
 
+function drawCards(end) {
+  const year = Number(end.slice(0, 4));
+  const numbers = [
+    [String(year - 1) + "년 연간", itemFor(inclusiveMonths((year - 1) + "01", (year - 1) + "12"))],
+    [year + "년 1–" + Number(end.slice(4)) + "월", itemFor(inclusiveMonths(year + "01", end))],
+    [monthName(end), itemFor([end])]
+  ];
+  $("kpis").innerHTML = numbers.map(([title, row]) => {
+    const [factor, unit] = scaleAmount([row.amount]);
+    const value = row.amount === null ? "—" : compact(row.amount / factor) + " " + unit;
+    return '<article class="kpi"><div>' + title + "</div><strong>" + value + '</strong><small class="' +
+      tone(row.yoy) + '">' + percent(row.yoy) + " YoY</small></article>";
+  }).join("");
+}
+
+function drawTable(rows, oldest, end) {
+  const amountLabel = state.currency === "KRW" ? "원" : "USD";
+  $("table-subtitle").textContent = country(state.partner) + " · " + monthName(oldest) + "–" + monthName(end);
+  $("amount-head").textContent = "금액 (" + amountLabel + ")";
+  $("price-head").textContent = "단가 (" + amountLabel + "/kg)";
+  const delta = value => '<td class="' + tone(value) + '">' + percent(value) + "</td>";
+  $("table-body").innerHTML = rows.slice().reverse().map(row =>
+    '<tr><th scope="row">' + row.label + "</th><td>" + format(row.amount) + "</td>" +
+    delta(row.yoy) + "<td>" + format(row.weight) + "</td>" + delta(row.weightYoy) +
+    "<td>" + format(row.price, price) + "</td>" + delta(row.priceYoy) + "</tr>").join("");
+}
+
+function prepareCanvas(canvas, scroll, size, height, stride = 75) {
+  const width = Math.max(scroll.clientWidth, 142 + stride * size);
+  const ratio = Math.min(window.devicePixelRatio || 1, 2, 15500 / width);
+  canvas.width = Math.floor(width * ratio);
+  canvas.height = Math.floor(height * ratio);
+  canvas.style.width = width + "px";
+  canvas.style.height = height + "px";
+  const context = canvas.getContext("2d");
+  context.scale(canvas.width / width, canvas.height / height);
+  context.font = '12px Inter,"Apple SD Gothic Neo",sans-serif';
+  return {context, width, height};
+}
+
+function alignRecent(scroll, rows) {
+  const windowKey = rows[0].tick + ":" + rows.at(-1).tick + ":" + rows.length;
+  if (scroll.dataset.window !== windowKey) {
+    scroll.scrollLeft = scroll.scrollWidth;
+    scroll.dataset.window = windowKey;
+  }
+}
+
+function axes(ctx, width, height, rows, maximum, rightScale) {
+  const left = 53, right = width - 89, top = 26, bottom = height - 34;
+  const y = value => bottom - value / maximum * (bottom - top);
+  const stride = (right - left) / rows.length;
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const fraction = i / 4;
+    const point = y(maximum * fraction);
+    ctx.strokeStyle = "#e3eaf2";
+    ctx.beginPath(); ctx.moveTo(left, point); ctx.lineTo(right, point); ctx.stroke();
+    ctx.textAlign = "right"; ctx.fillStyle = "#506278";
+    ctx.fillText(compact(maximum * fraction), left - 7, point + 3);
+    if (rightScale) {
+      ctx.textAlign = "left";
+      ctx.fillText(rightScale.format(rightScale.min + (rightScale.max - rightScale.min) * fraction), right + 7, point + 3);
+    }
+  }
+  rows.forEach((row, i) => {
+    ctx.fillStyle = "#506278"; ctx.textAlign = "center";
+    ctx.fillText(row.tick, left + stride * (i + .5), height - 13);
+  });
+  return {left, right, top, bottom, y, stride};
+}
+
+function drawCombo(rows, key, subtitle, units, alternate) {
+  const scroll = $(key + "-scroll");
+  const canvas = $(key + "-chart");
+  $(key + "-subtitle").textContent = subtitle;
+  canvas.setAttribute("aria-label", subtitle + " 차트. 값은 금액·중량·단가 표에서 확인할 수 있습니다.");
+  const {context: ctx, width, height} = prepareCanvas(canvas, scroll, rows.length, 294);
+  const plotted = rows.map(row => Number.isFinite(row[units.key]) ? row[units.key] / units.factor : null);
+  const line = rows.map(row => row[alternate.key]);
+  const max = Math.max(1, ...plotted.filter(Number.isFinite)) * 1.18;
+  const lineMin = Math.min(0, ...line.filter(Number.isFinite));
+  const lineMax = Math.max(1, ...line.filter(Number.isFinite));
+  const span = lineMax - lineMin;
+  const bounds = {min: lineMin - span * .13, max: lineMax + span * .16, format: alternate.format};
+  const {left, top, bottom, y, stride} = axes(ctx, width, height, rows, max, bounds);
+  const lineY = value => bottom - (value - bounds.min) / (bounds.max - bounds.min) * (bottom - top);
+  const bar = Math.min(38, stride * .55);
+  rows.forEach((row, i) => {
+    const x = left + stride * (i + .5);
+    const value = plotted[i];
+    if (value !== null) {
+      ctx.fillStyle = i === rows.length - 1 ? "#216ab9" : "#8eb9ea";
+      ctx.fillRect(x - bar / 2, y(value), bar, Math.max(1, bottom - y(value)));
+    }
+    ctx.textAlign = "center"; ctx.fillStyle = "#224365";
+    ctx.fillText(compact(value), x, value === null ? bottom - 7 : y(value) - 6);
+  });
+  let previous = null;
+  rows.forEach((row, i) => {
+    const value = line[i];
+    if (!Number.isFinite(value)) { previous = null; return; }
+    const x = left + stride * (i + .5), point = lineY(value);
+    if (previous) {
+      ctx.strokeStyle = "#b25529"; ctx.lineWidth = 1.8;
+      ctx.beginPath(); ctx.moveTo(previous.x, previous.y); ctx.lineTo(x, point); ctx.stroke();
+    }
+    ctx.fillStyle = "#a74825"; ctx.beginPath(); ctx.arc(x, point, 2.6, 0, Math.PI * 2); ctx.fill();
+    const label = alternate.format(value);
+    const barLabel = plotted[i] === null ? bottom - 7 : y(plotted[i]) - 6;
+    const labelY = Math.abs(point - 10 - barLabel) < 11 ? point + 14 : point - 10;
+    ctx.textAlign = "center"; ctx.strokeStyle = "#fff"; ctx.lineWidth = 4;
+    ctx.strokeText(label, x, labelY); ctx.fillText(label, x, labelY);
+    previous = {x, y: point};
+  });
+  alignRecent(scroll, rows);
+}
+
+function drawCountries(rows) {
+  const scroll = $("country-scroll");
+  const canvas = $("country-chart");
+  const months = rows.flatMap(row => row.months);
+  const top = partnerCodes.map(code => [code, aggregate(months, code).amount]).filter(([, amount]) => amount > 0)
+    .sort((a, b) => b[1] - a[1]).slice(0, 5).map(([code]) => code);
+  const palette = [...top.map((code, i) => [code, country(code), countryColors[i]]), ["other", "기타", countryColors.at(-1)]];
+  const plotted = rows.map(row => {
+    const total = aggregate(row.months, "0").amount;
+    const parts = top.map(code => aggregate(row.months, code).amount);
+    const other = total === null ? null : Math.max(0, total - (summing(parts) ?? 0));
+    return {...row, total, parts: [...parts, other]};
+  });
+  const stack = state.countryMode === "stack";
+  const [factor, unit] = scaleAmount(stack ? plotted.map(row => row.total) : plotted.flatMap(row => row.parts));
+  $("country-subtitle").textContent = "전국 · 상위 " + top.length + "개국 + 기타 · " + unit;
+  $("country-legend").replaceChildren(...palette.map(([code, title, color]) => {
+    const item = document.createElement(code === "other" ? "span" : "button");
+    const swatch = document.createElement("i");
+    swatch.style.background = color;
+    if (code !== "other") {
+      item.type = "button";
+      item.dataset.partnertarget = code;
+      item.setAttribute("aria-pressed", state.partner === code);
+    }
+    item.append(swatch, title);
+    return item;
+  }));
+  canvas.setAttribute("aria-label", $("country-subtitle").textContent + " 차트");
+  const {context: ctx, width, height} = prepareCanvas(canvas, scroll, rows.length, 270);
+  const max = Math.max(1, ...(stack ? plotted.map(row => Math.max(row.total ?? 0, summing(row.parts) ?? 0)) : plotted.flatMap(row => row.parts))
+    .filter(Number.isFinite).map(value => value / factor)) * 1.19;
+  const {left, y, stride} = axes(ctx, width, height, rows, max);
+  if (stack) {
+    const bar = Math.min(38, stride * .55);
+    plotted.forEach((row, i) => {
+      const x = left + stride * (i + .5);
+      let running = 0;
+      row.parts.forEach((value, n) => {
+        if (!Number.isFinite(value) || value <= 0) return;
+        const previous = running;
+        running += value / factor;
+        ctx.fillStyle = palette[n][2];
+        ctx.fillRect(x - bar / 2, y(running), bar, y(previous) - y(running));
+      });
+      ctx.textAlign = "center"; ctx.fillStyle = "#224365";
+      ctx.fillText(row.total === null ? "—" : compact(row.total / factor), x, y(running) - 6);
+    });
+  } else {
+    palette.forEach(([code, , color], n) => {
+      let previous = null;
+      plotted.forEach((row, i) => {
+        const value = row.parts[n];
+        if (!Number.isFinite(value)) { previous = null; return; }
+        const x = left + stride * (i + .5), vertical = y(value / factor);
+        if (previous) {
+          ctx.strokeStyle = color; ctx.lineWidth = code === state.partner ? 2.7 : 1.5;
+          ctx.beginPath(); ctx.moveTo(previous.x, previous.y); ctx.lineTo(x, vertical); ctx.stroke();
+        }
+        ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, vertical, 2.1, 0, Math.PI * 2); ctx.fill();
+        if (code === state.partner) {
+          ctx.textAlign = "center"; ctx.strokeStyle = "#fff"; ctx.lineWidth = 3;
+          ctx.strokeText(compact(value / factor), x, vertical - 7); ctx.fillText(compact(value / factor), x, vertical - 7);
+        }
+        previous = {x, y: vertical};
+      });
+    });
+  }
+  alignRecent(scroll, rows);
+}
+
+function drawCharts(rows) {
+  const [amountFactor, amountUnit] = scaleAmount(rows.map(row => row.amount));
+  const [weightFactor, weightUnit] = Math.max(0, ...rows.map(row => row.weight ?? 0)) >= 1e6 ? [1e6, "천 톤"] : [1e3, "톤"];
+  $("trend-title").textContent = latestFlow() + "액과 YoY";
+  const conversion = state.currency === "KRW" ? " · 월평균 환율" : "";
+  drawCombo(rows, "trend", country(state.partner) + " · " + amountUnit + conversion + " · YoY %",
+    {key: "amount", factor: amountFactor}, {key: "yoy", format: percent});
+  drawCombo(rows, "weight", weightUnit + " · " + (state.currency === "KRW" ? "원/kg" : "USD/kg"),
+    {key: "weight", factor: weightFactor}, {key: "price", format: compact});
+  drawCountries(rows);
+}
+
 function drawMonthly() {
-  const months = availableMonths();
-  const end = selectedMonth();
-  const partners = Object.keys(data.partners).filter(code => code !== "0")
-    .sort((a, b) => (country(a)).localeCompare(country(b), "ko"));
-  $("product-field").hidden = company().products.length < 2;
-  setSelect($("product"), company().products, state.product);
-  setSelect($("partner"), [["0", "전체 국가"], ...partners.map(code => [code, country(code)])], state.partner);
+  const months = availableMonths(), end = selectedMonth(), oldest = months.at(-1);
+  const product = company().products;
+  $("product-field").hidden = product.length < 2;
+  setSelect($("product"), product, state.product);
+  setSelect($("partner"), [["0", "전체 국가"], ...partnerCodes.map(code => [code, country(code)])], state.partner);
   setSelect($("reference"), months.map(month => [month, monthName(month)]), end);
   $("reference").disabled = !end;
   $("monthly-empty").hidden = Boolean(end);
   $("monthly-data").hidden = !end;
   $("csv").disabled = !end;
-  activeButtons("flow", state.flow);
-  activeButtons("metric", state.metric);
   if (!end) return;
 
-  const rows = records();
-  const current = rows.at(-1);
-  const flow = latestFlow();
-  const selectedCountry = country(state.partner);
-  const [divisor, unit] = scaleAmount([current.amount]);
-  const amount = current.amount === null ? "—" : compact(current.amount / divisor) + " " + unit;
-  const weight = current.weight === null ? "—" : compact(current.weight) + " kg";
-  const cards = [
-    ["월 " + flow + "액", amount, selectedCountry + " · " + monthName(end), ""],
-    ["전년 동월 대비", percent(current.yoy), monthName(offsetMonth(end, -12)) + " 대비", tone(current.yoy)],
-    ["전월 대비", percent(current.mom), monthName(offsetMonth(end, -1)) + " 대비", tone(current.mom)],
-    [flow + " 순중량", weight, selectedCountry + " · " + monthName(end), ""]
-  ];
-  $("kpis").innerHTML = cards.map(([label, number, sub, color]) => '<article class="kpi"><div>' + label +
-    '</div><strong class="' + color + '">' + number + "</strong><small>" + sub + "</small></article>").join("");
-  $("trend-title").textContent = "월별 " + flow + " 추이";
-  $("table-subtitle").textContent = selectedCountry + " · " + monthName(rows[0].month) + "–" + monthName(end) + " · 원자료 천 달러 단위";
-  $("table-body").innerHTML = rows.slice().reverse().map(row => "<tr><th scope='row'>" + monthName(row.month) +
-    "</th><td>" + dollars(row.amount) + "</td><td class='" + tone(row.yoy) + "'>" + percent(row.yoy) +
-    "</td><td class='" + tone(row.mom) + "'>" + percent(row.mom) + "</td><td>" + compact(row.weight) + "</td></tr>").join("");
-
-  const basis = valueFor(end, "0");
-  const reported = partners.map(code => [code, valueFor(end, code)]).filter(([, value]) => value > 0);
-  const list = reported.sort((a, b) => b[1] - a[1]).slice(0, 5);
-  $("rank-subtitle").textContent = monthName(end) + " · " + flow + "액 · 공표된 국가별 금액 기준";
-  $("rank").innerHTML = list.length ? list.map(([code, value]) => {
-    const ratio = basis > 0 ? (value / basis * 100).toFixed(1) + "%" : "—";
-    const share = list[0][1] > 0 ? value / list[0][1] * 100 : 0;
-    const comparison = change(value, valueFor(offsetMonth(end, -12), code));
-    const [factor, units] = scaleAmount([value]);
-    const label = compact(value / factor) + " " + units;
-    return '<button class="rank-item" type="button" data-partner="' + code + '" aria-pressed="' +
-      (code === state.partner) + '"><span class="rank-text"><span><strong>' + country(code) +
-      '</strong><small class="' + tone(comparison) + '">' + percent(comparison) + '</small></span><span>' + label +
-      '</span></span><span class="rank-track"><span class="rank-fill" style="width:' + share +
-      '%"></span></span><span class="rank-note">전체 대비 ' + ratio + "</span></button>";
-  }).join("") : '<p class="empty">기준월에 조회된 국가 행이 없습니다.</p>';
-  drawTrend();
-}
-
-function prepareCanvas(canvas, scroll, size, height, stride = 53) {
-  const width = Math.max(scroll.clientWidth, 52 + stride * size + 16);
-  const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
-  canvas.width = width * pixelRatio;
-  canvas.height = height * pixelRatio;
-  canvas.style.width = width + "px";
-  canvas.style.height = height + "px";
-  const context = canvas.getContext("2d");
-  context.scale(pixelRatio, pixelRatio);
-  context.font = '12px Inter,"Apple SD Gothic Neo",sans-serif';
-  return { context, width, height };
-}
-
-function drawTrend() {
-  const rows = records();
-  if (!rows.length || state.view !== "monthly") return;
-  const raw = rows.map(row => row[state.metric]);
-  const [divisor, unit] = state.metric === "amount" ? scaleAmount(raw) :
-    state.metric === "weight" ? (Math.max(0, ...raw.filter(Number.isFinite)) >= 1e6 ? [1e6, "백만 kg"] :
-      Math.max(0, ...raw.filter(Number.isFinite)) >= 1e3 ? [1e3, "천 kg"] : [1, "kg"]) : [1, "%"];
-  const format = number => state.metric === "yoy" ? percent(number) : compact(number);
-  const points = raw.map(value => Number.isFinite(value) ? value / divisor : null);
-  $("chart-subtitle").textContent = country(state.partner) + " · " + unit + " · " +
-    (state.metric === "yoy" ? "전년 동월 대비" : state.metric === "weight" ? "순중량" : "통관 금액");
-  const canvas = $("trend-chart");
-  canvas.setAttribute("aria-label", $("trend-title").textContent + " " + $("chart-subtitle").textContent + ". 수치는 월별 상세 표에서 확인할 수 있습니다.");
-  const {context: ctx, width, height} = prepareCanvas(canvas, $("trend-scroll"), rows.length, 268);
-  const left = 48, right = width - 12, top = 24, bottom = height - 32;
-  const min = Math.min(0, ...points.filter(Number.isFinite));
-  const max = Math.max(0, ...points.filter(Number.isFinite));
-  const spread = max - min || 1;
-  const high = max + spread * .17;
-  const low = min < 0 ? min - spread * .15 : 0;
-  const y = number => top + (high - number) / (high - low) * (bottom - top);
-  const stride = (right - left) / rows.length;
-  const bar = Math.min(35, stride * .57);
-  for (let i = 0; i <= 4; i++) {
-    const val = low + (high - low) * i / 4;
-    ctx.strokeStyle = "#e3e9f1";
-    ctx.beginPath(); ctx.moveTo(left, y(val)); ctx.lineTo(right, y(val)); ctx.stroke();
-    ctx.textAlign = "right"; ctx.fillStyle = "#506174"; ctx.fillText(compact(val), left - 5, y(val) + 4);
-  }
-  ctx.strokeStyle = "#acb8c8";
-  ctx.beginPath(); ctx.moveTo(left, y(0)); ctx.lineTo(right, y(0)); ctx.stroke();
-  rows.forEach((row, i) => {
-    const x = left + stride * (i + .5);
-    const point = points[i];
-    ctx.textAlign = "center";
-    if (point !== null) {
-      ctx.fillStyle = point < 0 ? "#b76e64" : i === rows.length - 1 ? "#2157c8" : "#79a2e5";
-      ctx.fillRect(x - bar / 2, Math.min(y(0), y(point)), bar, Math.max(1, Math.abs(y(0) - y(point))));
-    }
-    ctx.fillStyle = "#263b5a";
-    const labelY = point === null ? bottom - 6 : y(point) + (point < 0 ? 15 : -6);
-    ctx.fillText(format(point), x, labelY);
-    ctx.fillStyle = "#506174";
-    ctx.fillText(monthShort(row.month), x, height - 12);
-  });
-  if (rows.length > 0) $("trend-scroll").scrollLeft = $("trend-scroll").scrollWidth;
+  drawCards(end);
+  drawTable(periods(inclusiveMonths(oldest, end), state.tableGrain), oldest, end);
+  drawCharts(periods(shownMonths(end, oldest), state.grain));
 }
 
 function download(name, rows) {
@@ -336,15 +416,13 @@ function drawDecile() {
   const dataset = state.deciles[state.ticker];
   $("decile-controls").hidden = !dataset;
   $("decile-chart-wrap").hidden = !dataset;
-  $("decile-description").textContent = "누계 차감으로 1~10일, 11~20일, 21일~말일을 계산하고 전년의 같은 구간과 비교합니다.";
+  $("decile-amount-head").textContent = "누계 (" + state.currency + ")";
   const result = $("decile-result");
   if (!dataset) {
-    result.className = "empty";
-    result.textContent = "이 종목의 세부 HSK·지역에 맞는 10일 단위 원자료가 필요합니다. 관세청 공개 10일 통계는 주요 품목군과 주요국 집계입니다. 같은 집계 범위의 수출 누계 CSV를 열면 차트가 표시됩니다.";
+    result.textContent = "수출 누계 CSV를 열어 비교하세요.";
     return;
   }
   activeButtons("cutoff", state.cutoff);
-  result.className = "muted";
   result.textContent = dataset.scope + " · " + dataset.source + " · 현재 브라우저 세션";
   if (state.view !== "decile") return;
 
@@ -355,14 +433,14 @@ function drawDecile() {
     .filter(month => month >= months[0]);
   const rows = timeline.map(month => {
     const [a, b, c] = dataset.months[month] ?? [null, null, null];
-    const total = [a, b, c][last];
+    const total = amountIn([a, b, c][last], month);
     const parts = [a, b === null || a === null ? null : b - a, c === null || b === null ? null : c - b];
-    return {month, parts: parts.map((value, index) => index <= last ? value : null), total,
-      yoy: change(total, dataset.months[offsetMonth(month, -12)]?.[last])};
+    return {month, parts: parts.map((value, index) => index <= last ? amountIn(value, month) : null), total,
+      yoy: change(total, amountIn(dataset.months[offsetMonth(month, -12)]?.[last], offsetMonth(month, -12)))};
   });
   $("decile-table").innerHTML = rows.slice().reverse().map(row => "<tr><th scope='row'>" + monthName(row.month) +
-    "</th>" + row.parts.map(value => "<td>" + dollars(value) + "</td>").join("") + "<td>" +
-    dollars(row.total) + "</td><td class='" + tone(row.yoy) + "'>" + percent(row.yoy) + "</td></tr>").join("");
+    "</th>" + row.parts.map(value => "<td>" + format(value) + "</td>").join("") + "<td>" +
+    format(row.total) + "</td><td class='" + tone(row.yoy) + "'>" + percent(row.yoy) + "</td></tr>").join("");
   const [factor, unit] = scaleAmount(rows.map(row => row.total ?? row.parts.reduce((sum, value) => sum + (value ?? 0), 0)));
   const canvas = $("decile-chart");
   canvas.setAttribute("aria-label", "10일 단위 수출 비교. 금액 단위 " + unit + ". 구간 금액과 전년 동기 대비 수치는 아래 표에서 확인할 수 있습니다.");
@@ -422,42 +500,103 @@ function drawDecile() {
 }
 
 function render() {
-  drawHeader();
-  activeButtons("view", state.view);
+  const item = company();
+  $("company").textContent = item.name;
+  $("series-label").textContent = item.products.find(([code]) => code === state.product)[1] + " · 한국 전체 품목 통관";
+  for (const [attribute, key] of [["ticker","ticker"],["currency","currency"],["view","view"],["flow","flow"],["grain","grain"],
+      ["table-grain","tableGrain"],["range","range"],["country-mode","countryMode"]]) {
+    activeButtons(attribute, state[key]);
+  }
   $("monthly").hidden = state.view !== "monthly";
   $("decile").hidden = state.view !== "decile";
   if (state.view === "monthly") drawMonthly();
   else drawDecile();
 }
 
-$("watchlist").innerHTML = companies.map(item => '<button type="button" data-ticker="' + item.ticker +
-  '">' + item.name + "<small>" + item.ticker + "</small></button>").join("");
+function filterCompanies() {
+  const normalized = text => text.toLowerCase().replaceAll(" ", "");
+  const query = normalized($("company-search").value);
+  let count = 0;
+  for (const button of $("watchlist").children) {
+    const matches = normalized(button.textContent).includes(query);
+    button.hidden = !matches;
+    if (matches) count++;
+  }
+  $("no-companies").hidden = Boolean(count);
+}
 
+let drawerPinned = false;
+function companyPanel(open, focus = false) {
+  $("company-panel").hidden = !open;
+  $("open-companies").setAttribute("aria-expanded", open);
+  if (open && focus) $("company-search").focus();
+}
+
+$("watchlist").innerHTML = companies.map(item => '<button type="button" data-ticker="' + item.ticker + '">' +
+  item.name + "</button>").join("");
+$("company-search").addEventListener("input", filterCompanies);
+$("company-search").addEventListener("keydown", event => {
+  if (event.key !== "Enter") return;
+  const first = $("watchlist").querySelector("button:not([hidden])");
+  if (first) { event.preventDefault(); first.click(); }
+});
+$("sidebar").addEventListener("pointerenter", event => { if (event.pointerType === "mouse") companyPanel(true); });
+$("sidebar").addEventListener("pointerleave", event => {
+  if (event.pointerType === "mouse" && !drawerPinned && !$("company-panel").contains(document.activeElement)) companyPanel(false);
+});
+$("open-companies").addEventListener("click", () => {
+  drawerPinned = !drawerPinned;
+  companyPanel(drawerPinned, drawerPinned);
+});
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape" && !$("company-panel").hidden) {
+    drawerPinned = false;
+    companyPanel(false);
+    $("open-companies").focus();
+  }
+});
 document.addEventListener("click", event => {
-  const button = event.target.closest("button[data-ticker],button[data-flow],button[data-view],button[data-metric],button[data-partner],button[data-cutoff]");
+  if (!$("sidebar").contains(event.target) && !$("company-panel").hidden) {
+    drawerPinned = false;
+    companyPanel(false);
+  }
+  const button = event.target.closest("button[data-ticker],button[data-flow],button[data-view],button[data-currency],button[data-grain],button[data-table-grain],button[data-range],button[data-country-mode],button[data-partnertarget],button[data-cutoff]");
   if (!button) return;
   const [key, value] = Object.entries(button.dataset)[0];
-  if (key === "ticker" && value !== state.ticker) {
+  if (key === "ticker") {
     state.ticker = value;
     if (!company().products.some(([code]) => code === state.product)) state.product = company().products[0][0];
-    if (!availableMonths().includes(state.month)) state.month = "";
     $("decile-status").textContent = "";
-  } else state[key] = value;
+    $("company-search").value = "";
+    filterCompanies();
+    drawerPinned = false;
+    companyPanel(false);
+    if (event.detail === 0) $("open-companies").focus();
+  } else {
+    state[key === "partnertarget" ? "partner" : key] = value;
+  }
   render();
-  if (key === "partner") $("rank").querySelector('[data-partner="' + value + '"]')?.focus();
+  if (key === "partnertarget") $("country-legend").querySelector('[data-partnertarget="' + value + '"]')?.focus();
 });
-for (const id of ["product", "partner", "range", "reference"]) {
+for (const id of ["product", "partner", "reference"]) {
   $(id).addEventListener("change", event => {
-    const key = id === "reference" ? "month" : id;
-    state[key] = id === "range" ? Number(event.target.value) : event.target.value;
+    state[id === "reference" ? "month" : id] = event.target.value;
     render();
   });
 }
 $("csv").addEventListener("click", () => {
-  const cols = ["ticker", "hsk10", "partner", "flow", "month", "usd", "yoy_pct", "mom_pct", "net_kg", "source"];
-  const rows = records().map(row => [state.ticker, state.product, country(state.partner), state.flow,
-    row.month, row.amount, row.yoy?.toFixed(2), row.mom?.toFixed(2), row.weight, data.source]);
-  download("trade-" + state.ticker + "-" + state.partner + "-" + state.flow + ".csv", [cols, ...rows]);
+  const end = selectedMonth();
+  const months = shownMonths(end, availableMonths().at(-1));
+  const cols = ["company", "hsk10", "partner", "flow", "month", "usd", "krw", "krw_per_usd", "yoy_pct", "mom_pct", "net_kg", "source"];
+  const rows = months.map(month => {
+    const entry = valueFor(month);
+    const krw = amountIn(entry?.[0], month, "KRW");
+    const usdYoy = change(entry?.[0], valueFor(offsetMonth(month, -12))?.[0]);
+    const usdMom = change(entry?.[0], valueFor(offsetMonth(month, -1))?.[0]);
+    return [company().name, state.product, country(state.partner), state.flow, month, entry?.[0],
+      krw === null ? null : Math.round(krw), rate(month), usdYoy?.toFixed(2), usdMom?.toFixed(2), entry?.[1], data.source];
+  });
+  download(company().name + "-" + state.flow + ".csv", [cols, ...rows]);
 });
 $("template").addEventListener("click", () => download("decile-template.csv", [decileHeader.split(",")]));
 $("decile-file").addEventListener("change", async event => {
@@ -474,19 +613,11 @@ $("decile-file").addEventListener("change", async event => {
   }
   event.target.value = "";
 });
-document.querySelector(".status").addEventListener("click", () => { $("method").open = true; });
-window.addEventListener("resize", () => state.view === "monthly" ? drawTrend() : drawDecile());
-
-const collected = data.asOf ? new Intl.DateTimeFormat("ko-KR", {
-  dateStyle: "medium", timeZone: "Asia/Seoul"
-}).format(new Date(data.asOf)) : "—";
-$("snapshot-date").textContent = "데이터 수집일 " + collected;
-$("method-body").innerHTML =
-  '<p>월별 데이터는 관세청의 HSK 10자리 수출입 실적입니다. 전체 국가는 관세청 품목별 합계이며, 국가별 순위는 해당 월에 공표된 국가·지역 행에서 계산합니다.</p>' +
-  '<p>국내지역, 수출 상대국, 수리 세관과 적재항은 각각 다른 신고·집계 항목입니다. 국내지역 합계도 해당 지역과 품목의 통계이므로 개별 기업 귀속은 별도로 검증해야 합니다.</p>' +
-  '<p>전년 동월 대비와 전월 대비는 비교 기준 금액이 양수일 때 표시합니다. 미조회 값은 —로 표시합니다. 수출액은 FOB, 수입액은 CIF 기준입니다. 금액은 관세청 CSV의 천 달러 값을 USD로 환산했으며, 0은 천 달러 단위의 공표 값입니다. 중량 단위는 kg입니다.</p>' +
-  '<p>10일 데이터는 ticker, month(YYYYMM), usd_10, usd_20, usd_end, scope, source 순서의 CSV를 지원합니다. 미발표 누계는 빈 칸으로 두고 집계 범위·출처는 종목 내에서 일치시켜 주세요. 업로드 자료는 현재 브라우저 세션에서만 표시됩니다.</p>' +
-  '<p><a href="https://tradedata.go.kr/cts/index.do" target="_blank" rel="noopener noreferrer">관세청 수출입무역통계</a>' +
-  '<a href="https://www.data.go.kr/data/15100475/openapi.do" target="_blank" rel="noopener noreferrer">관세청 월별 품목·국가 API</a>' +
-  '<a href="https://www.data.go.kr/data/15157908/openapi.do" target="_blank" rel="noopener noreferrer">관세청 10일치 공표 범위</a></p>';
+window.addEventListener("resize", () => {
+  if (state.view === "monthly") {
+    const end = selectedMonth();
+    if (end) drawCharts(periods(shownMonths(end, availableMonths().at(-1)), state.grain));
+  } else drawDecile();
+});
+$("snapshot-date").textContent = data.asOf ? "수집 " + data.asOf : "";
 render();

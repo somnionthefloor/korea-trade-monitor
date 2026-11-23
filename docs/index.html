@@ -3,40 +3,35 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="한국 상장 종목과 관련된 품목의 월별·국가별 수출입 통계">
+  <meta name="description" content="한국 품목의 월별·국가별 수출입 통계">
   <title>한국 수출입 트래커</title>
-  <link rel="stylesheet" href="styles.css">
-  <script src="snapshot.js" defer></script>
-  <script src="app.js" defer></script>
+  <link rel="stylesheet" href="styles.css?v=2">
+  <script src="snapshot.js?v=2" defer></script>
+  <script src="app.js?v=2" defer></script>
 </head>
 <body>
   <a class="skip" href="#main">본문으로 이동</a>
-  <header class="topbar">
-    <div class="top-inner">
-      <div class="brand"><span class="mark" aria-hidden="true"><i></i><i></i><i></i></span><span>한국 수출입 트래커</span></div>
-      <a href="#method" class="status"><span class="dot"></span>데이터 출처</a>
+  <aside class="sidebar" id="sidebar" aria-label="종목 선택">
+    <button class="rail-button" id="open-companies" type="button" aria-controls="company-panel" aria-expanded="false" aria-label="종목 목록 열기">
+      <span class="menu-icon" aria-hidden="true"></span><span>종목</span>
+    </button>
+    <div class="company-panel" id="company-panel" hidden>
+      <h2>종목</h2>
+      <input type="search" id="company-search" placeholder="종목 검색" aria-label="종목 검색" autocomplete="off">
+      <nav id="watchlist" class="watchlist" aria-label="관심 종목"></nav>
+      <p id="no-companies" hidden>일치하는 종목이 없습니다.</p>
     </div>
-  </header>
+  </aside>
   <main id="main" class="shell">
-    <nav id="watchlist" class="watchlist" aria-label="관심 종목"></nav>
-    <section class="hero" aria-labelledby="company">
-      <div>
-        <span class="ticker" id="ticker"></span>
-        <h1 id="company"></h1>
-        <p id="series-label" class="muted"></p>
+    <header class="header">
+      <div><h1 id="company"></h1><p id="series-label" class="muted"></p></div>
+      <div class="segmented currency" aria-label="통화">
+        <button type="button" data-currency="USD" aria-pressed="true">USD</button>
+        <button type="button" data-currency="KRW" aria-pressed="false">KRW</button>
       </div>
-      <div class="hero-meta">
-        <span>통계 기준</span>
-        <strong>한국 품목 통관</strong>
-        <span id="company-scope"></span>
-      </div>
-    </section>
-    <details class="mapping" id="mapping">
-      <summary><span>TRASS 조회 조건과 매칭 근거</span><span id="mapping-caption"></span></summary>
-      <div id="mapping-body" class="mapping-body"></div>
-    </details>
+    </header>
     <div class="switches">
-      <div class="segmented view-switch" aria-label="조회 화면">
+      <div class="view-switch" aria-label="조회 화면">
         <button type="button" data-view="monthly" aria-pressed="true">월별·국가별</button>
         <button type="button" data-view="decile" aria-pressed="false">10일 단위</button>
       </div>
@@ -49,62 +44,90 @@
         </div>
         <label class="field" id="product-field" hidden>품목<select id="product"></select></label>
         <label class="field">국가<select id="partner"></select></label>
-        <label class="field">기간<select id="range"><option value="6">최근 6개월</option><option value="12" selected>최근 12개월</option><option value="24">최근 24개월</option></select></label>
         <label class="field">기준월<select id="reference"></select></label>
         <button type="button" id="csv" class="outline push">CSV 다운로드</button>
       </div>
-      <div id="monthly-empty" class="panel empty" hidden>선택한 품목의 월별 데이터를 불러오지 못했습니다.</div>
+      <div id="monthly-empty" class="panel empty" hidden>월별 데이터가 없습니다.</div>
       <div id="monthly-data">
         <div class="kpis" id="kpis"></div>
-        <div class="grid">
-          <section class="panel trend" aria-labelledby="trend-title">
-            <div class="panel-head">
-              <div><h2 id="trend-title">월별 수출 추이</h2><p id="chart-subtitle"></p></div>
-              <div class="segmented compact" aria-label="차트 지표">
-                <button type="button" data-metric="amount" aria-pressed="true">금액</button>
-                <button type="button" data-metric="yoy" aria-pressed="false">YoY</button>
-                <button type="button" data-metric="weight" aria-pressed="false">중량</button>
+        <section class="panel" aria-labelledby="trend-title">
+          <div class="panel-head">
+            <div><h2 id="trend-title">수출액과 YoY</h2><p id="trend-subtitle"></p></div>
+            <div class="chart-controls">
+              <div class="segmented compact" aria-label="집계 주기">
+                <button type="button" data-grain="month" aria-pressed="true">월별</button>
+                <button type="button" data-grain="quarter" aria-pressed="false">분기별</button>
+                <button type="button" data-grain="year" aria-pressed="false">연간</button>
+              </div>
+              <div class="segmented compact" aria-label="표시 기간">
+                <button type="button" data-range="12" aria-pressed="true">1년</button>
+                <button type="button" data-range="24" aria-pressed="false">2년</button>
+                <button type="button" data-range="36" aria-pressed="false">3년</button>
+                <button type="button" data-range="60" aria-pressed="false">5년</button>
+                <button type="button" data-range="all" aria-pressed="false">전체</button>
               </div>
             </div>
-            <div class="canvas-scroll" id="trend-scroll" tabindex="0" aria-label="월별 차트 스크롤"><canvas id="trend-chart" role="img"></canvas></div>
-          </section>
-          <section class="panel ranking" aria-labelledby="rank-title">
-            <div class="panel-head"><div><h2 id="rank-title">국가별 상위 5</h2><p id="rank-subtitle"></p></div></div>
-            <div id="rank"></div>
-          </section>
-        </div>
-        <section class="panel table-panel" aria-labelledby="table-title">
-          <div class="panel-head"><div><h2 id="table-title">월별 상세</h2><p id="table-subtitle"></p></div></div>
-          <div class="table-scroll"><table><thead><tr><th scope="col">월</th><th scope="col">금액 (USD)</th><th scope="col">전년 동월 대비</th><th scope="col">전월 대비</th><th scope="col">순중량 (kg)</th></tr></thead><tbody id="table-body"></tbody></table></div>
+          </div>
+          <div id="trend-scroll" class="canvas-scroll" tabindex="0" aria-label="금액과 YoY 차트">
+            <canvas id="trend-chart" role="img"></canvas>
+          </div>
+        </section>
+        <section class="panel" aria-labelledby="table-title">
+          <div class="panel-head">
+            <div><h2 id="table-title">금액 · 중량 · 단가</h2><p id="table-subtitle"></p></div>
+            <div class="segmented compact" aria-label="상세 표 집계 주기">
+              <button type="button" data-table-grain="month" aria-pressed="false">월별</button>
+              <button type="button" data-table-grain="quarter" aria-pressed="false">분기별</button>
+              <button type="button" data-table-grain="year" aria-pressed="true">연간</button>
+            </div>
+          </div>
+          <div class="table-scroll"><table><thead><tr><th scope="col">기간</th><th scope="col" id="amount-head">금액 (USD)</th><th scope="col">YoY</th><th scope="col">순중량 (kg)</th><th scope="col">YoY</th><th scope="col" id="price-head">단가 (USD/kg)</th><th scope="col">YoY</th></tr></thead><tbody id="table-body"></tbody></table></div>
+        </section>
+        <section class="panel" aria-labelledby="weight-title">
+          <div class="panel-head"><div><h2 id="weight-title">중량과 단가</h2><p id="weight-subtitle"></p></div></div>
+          <div id="weight-scroll" class="canvas-scroll" tabindex="0" aria-label="중량과 단가 차트"><canvas id="weight-chart" role="img"></canvas></div>
+        </section>
+        <section class="panel" aria-labelledby="countries-title">
+          <div class="panel-head">
+            <div><h2 id="countries-title">국가별 추이</h2><p id="country-subtitle"></p></div>
+            <div class="segmented compact" aria-label="국가 차트 종류">
+              <button type="button" data-country-mode="stack" aria-pressed="true">구성</button>
+              <button type="button" data-country-mode="line" aria-pressed="false">비교</button>
+            </div>
+          </div>
+          <div id="country-legend" class="legend"></div>
+          <div id="country-scroll" class="canvas-scroll" tabindex="0" aria-label="국가별 금액 차트"><canvas id="country-chart" role="img"></canvas></div>
         </section>
       </div>
     </section>
     <section id="decile" aria-labelledby="decile-title" hidden>
-      <div class="panel decile">
-        <div class="panel-head"><div><h2 id="decile-title">10일 단위 수출 비교</h2><p id="decile-description"></p></div></div>
-        <div id="decile-result"></div>
+      <div class="panel">
+        <div class="panel-head"><div><h2 id="decile-title">10일 단위 수출</h2><p id="decile-result"></p></div></div>
         <div class="decile-tools">
           <div class="segmented" id="decile-controls" aria-label="기준 구간" hidden>
             <button type="button" data-cutoff="10" aria-pressed="false">1~10일</button>
             <button type="button" data-cutoff="20" aria-pressed="false">1~20일</button>
             <button type="button" data-cutoff="end" aria-pressed="true">월말</button>
           </div>
-          <label class="outline upload">10일 단위 CSV 열기<input type="file" id="decile-file" accept=".csv,text/csv"></label>
-          <button type="button" id="template" class="text-button">CSV 양식 받기</button>
+          <label class="outline upload">누계 CSV 열기<input type="file" id="decile-file" accept=".csv,text/csv"></label>
+          <button type="button" id="template" class="text-button">CSV 양식</button>
         </div>
         <p id="decile-status" class="muted" role="status"></p>
         <div id="decile-chart-wrap" hidden>
           <div class="legend"><span><i class="first"></i>1~10일</span><span><i class="second"></i>11~20일</span><span><i class="third"></i>21일~말일</span><span><i class="line"></i>동일 구간 YoY</span></div>
-          <div class="canvas-scroll" id="decile-scroll" tabindex="0" aria-label="10일 단위 차트 스크롤"><canvas id="decile-chart" role="img"></canvas></div>
-          <div class="table-scroll"><table><thead><tr><th>월</th><th>1~10일</th><th>11~20일</th><th>21일~말일</th><th>선택 구간 누계 (USD)</th><th>동일 구간 YoY</th></tr></thead><tbody id="decile-table"></tbody></table></div>
+          <div id="decile-scroll" class="canvas-scroll" tabindex="0" aria-label="10일 단위 차트"><canvas id="decile-chart" role="img"></canvas></div>
+          <div class="table-scroll"><table><thead><tr><th>월</th><th>1~10일</th><th>11~20일</th><th>21일~말일</th><th id="decile-amount-head">누계 (USD)</th><th>동일 구간 YoY</th></tr></thead><tbody id="decile-table"></tbody></table></div>
         </div>
       </div>
     </section>
-    <details class="method" id="method">
-      <summary>출처와 집계 기준</summary>
-      <div id="method-body"></div>
-    </details>
-    <footer><span>한국 수출입 트래커</span><span id="snapshot-date"></span></footer>
+    <footer>
+      <details id="method"><summary>출처</summary>
+        <p>한국 전체 품목 통관 · <a href="https://tradedata.go.kr/cts/index.do" target="_blank" rel="noopener noreferrer">관세청</a></p>
+        <p>원화 추정치 · 거래월 <a href="https://ecos.bok.or.kr/" target="_blank" rel="noopener noreferrer">한국은행 ECOS</a> 월평균 매매기준율 × 달러 금액</p>
+        <p>기간 YoY는 전년의 같은 월 구간과 비교합니다. 중량당 단가는 금액÷순중량입니다.</p>
+      </details>
+      <span id="snapshot-date"></span>
+    </footer>
   </main>
 </body>
 </html>
