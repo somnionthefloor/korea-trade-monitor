@@ -1,31 +1,41 @@
 "use strict";
 
 const companies = [
-  {ticker: "003230", name: "삼양식품", products: [["1902301010", "인스턴트 라면"]]},
-  {ticker: "214450", name: "파마리서치", products: [["3304999000", "기타화장품"]]},
-  {ticker: "000660", name: "SK하이닉스", products: [["8542321010", "DRAM"], ["8542321030", "플래시 메모리"]]},
-  {ticker: "005930", name: "삼성전자", products: [["8542321010", "DRAM"], ["8542321030", "플래시 메모리"]]}
+  {ticker: "003230", name: "삼양식품", regions: ["밀양시", "원주시", "익산시"],
+    products: [["1902301010", "라면"]]},
+  {ticker: "214450", name: "파마리서치", regions: ["강릉시"],
+    products: [["3304999000", "기타화장품"]]},
+  {ticker: "000660", name: "SK하이닉스", regions: ["이천시", "청주시"],
+    products: [["8542321010", "DRAM"], ["8542321030", "플래시 메모리"]]},
+  {ticker: "005930", name: "삼성전자", regions: ["평택시", "화성시", "용인시"],
+    products: [["8542321010", "DRAM"], ["8542321030", "플래시 메모리"]]}
 ];
-const data = globalThis.TRADE_DATA ?? {series: {}, partners: {}};
+const data = globalThis.TRADE_DATA ?? {};
 const state = {
-  ticker: companies[0].ticker, product: companies[0].products[0][0], partner: "0",
-  flow: "X", currency: "USD", grain: "month", tableGrain: "year", range: "12",
-  countryMode: "stack", view: "monthly", cutoff: "end", month: "", deciles: {}
+  ticker: companies[0].ticker, product: companies[0].products[0][0], region: companies[0].regions[0],
+  partner: "", currency: "USD", grain: "month", tableGrain: "year", range: "12",
+  countryMode: "stack", view: "monthly", cutoff: "end", month: "", exports: {}, deciles: {}
 };
 const $ = id => document.getElementById(id);
 const company = () => companies.find(item => item.ticker === state.ticker);
-const series = () => data.series[state.product]?.months ?? {};
+const productName = () => company().products.find(([code]) => code === state.product)[1];
+const seriesKey = (region, hsk) => region + "/" + hsk;
+const selectedKey = () => seriesKey(state.region, state.product);
+const allowedKeys = new Set(companies.flatMap(item => item.regions.flatMap(region =>
+  item.products.map(([hsk]) => seriesKey(region, hsk)))));
+const dataset = () => state.exports[selectedKey()];
+const series = () => dataset()?.months ?? {};
 const availableMonths = () => Object.keys(series()).sort().reverse();
-const latestFlow = () => state.flow === "X" ? "수출" : "수입";
 const selectedMonth = () => state.month || availableMonths()[0] || "";
-const country = code => data.partners[code] ?? (code === "0" ? "전체 국가" : code);
-const partnerCodes = Object.keys(data.partners).filter(code => code !== "0").sort((a, b) => country(a).localeCompare(country(b), "ko"));
+const country = key => key || "전체 상대국";
+const partners = () => [...(dataset()?.partners ?? [])].sort((a, b) => a.localeCompare(b, "ko"));
 const money = new Intl.NumberFormat("ko-KR", {maximumFractionDigits: 0});
 const decimal = new Intl.NumberFormat("ko-KR", {maximumFractionDigits: 1});
 const price = new Intl.NumberFormat("ko-KR", {maximumFractionDigits: 2});
 const shades = ["#267c6a", "#477bd2", "#c07e40"];
 const countryColors = ["#2873c2", "#31a084", "#ba6b27", "#7a69ba", "#328dad", "#a8b4c3"];
-const decileHeader = "ticker,month,usd_10,usd_20,usd_end,scope,source";
+const exportColumns = ["month", "hsk10", "region", "region_basis", "partner", "export_usd", "net_kg", "source"];
+const decileColumns = ["month", "hsk10", "region", "region_basis", "usd_10", "usd_20", "usd_end", "source"];
 const compact = value => Number.isFinite(value) ? decimal.format(value) : "—";
 const format = (value, formatter = money) => Number.isFinite(value) ? formatter.format(value) : "—";
 const monthName = month => month ? month.slice(0, 4) + "." + month.slice(4) : "—";
@@ -33,8 +43,8 @@ const monthShort = month => monthName(month).slice(2);
 const tone = value => value > 0 ? "up" : value < 0 ? "down" : "";
 const percent = value => Number.isFinite(value) ? (value > 0 ? "+" : "") + value.toFixed(1) + "%" : "—";
 const change = (now, before) => Number.isFinite(now) && Number.isFinite(before) && before > 0 ? (now / before - 1) * 100 : null;
-const rate = month => data.fx?.rates[month] ?? null;
-const valueFor = (month, partner = state.partner) => series()[month]?.[partner]?.[state.flow];
+const rate = month => data.fx?.rates?.[month] ?? null;
+const valueFor = (month, partner = state.partner) => series()[month]?.[partner];
 const amountIn = (usd, month, currency = state.currency) => {
   if (!Number.isFinite(usd)) return null;
   const multiplier = currency === "USD" ? 1 : rate(month);
@@ -79,13 +89,14 @@ function summing(values) {
 
 function aggregate(months, partner = state.partner, currency = state.currency) {
   const table = series();
-  const validMonths = months.every(month => table[month]);
   const values = months.map(month => {
-    const entry = table[month]?.[partner]?.[state.flow];
+    const entry = table[month]?.[partner];
     return [amountIn(entry?.[0], month, currency), entry?.[1]];
   });
-  const amount = validMonths ? summing(values.map(entry => entry[0])) : null;
-  const weight = validMonths ? summing(values.map(entry => entry[1])) : null;
+  const rollup = index => values.every(entry => Number.isFinite(entry[index]))
+    ? summing(values.map(entry => entry[index])) : null;
+  const amount = rollup(0);
+  const weight = rollup(1);
   return {amount, weight, price: amount !== null && weight > 0 ? amount / weight : null};
 }
 
@@ -146,7 +157,7 @@ function drawCards(end) {
 
 function drawTable(rows, oldest, end) {
   const amountLabel = state.currency === "KRW" ? "원" : "USD";
-  $("table-subtitle").textContent = country(state.partner) + " · " + monthName(oldest) + "–" + monthName(end);
+  $("table-subtitle").textContent = country(state.partner) + " · " + monthName(oldest) + "–" + monthName(end) + " · " + dataset().source;
   $("amount-head").textContent = "금액 (" + amountLabel + ")";
   $("price-head").textContent = "단가 (" + amountLabel + "/kg)";
   const delta = value => '<td class="' + tone(value) + '">' + percent(value) + "</td>";
@@ -251,27 +262,27 @@ function drawCountries(rows) {
   const scroll = $("country-scroll");
   const canvas = $("country-chart");
   const months = rows.flatMap(row => row.months);
-  const top = partnerCodes.map(code => [code, aggregate(months, code).amount]).filter(([, amount]) => amount > 0)
+  const top = partners().filter(Boolean).map(code =>
+    [code, summing(months.map(month => amountIn(valueFor(month, code)?.[0], month)))]
+  ).filter(([, amount]) => amount > 0)
     .sort((a, b) => b[1] - a[1]).slice(0, 5).map(([code]) => code);
-  const palette = [...top.map((code, i) => [code, country(code), countryColors[i]]), ["other", "기타", countryColors.at(-1)]];
+  $("countries-section").hidden = !top.length;
+  if (!top.length) return;
+  const palette = top.map((code, i) => [code, country(code), countryColors[i]]);
   const plotted = rows.map(row => {
-    const total = aggregate(row.months, "0").amount;
     const parts = top.map(code => aggregate(row.months, code).amount);
-    const other = total === null ? null : Math.max(0, total - (summing(parts) ?? 0));
-    return {...row, total, parts: [...parts, other]};
+    return {...row, total: summing(parts), parts};
   });
   const stack = state.countryMode === "stack";
   const [factor, unit] = scaleAmount(stack ? plotted.map(row => row.total) : plotted.flatMap(row => row.parts));
-  $("country-subtitle").textContent = "전국 · 상위 " + top.length + "개국 + 기타 · " + unit;
+  $("country-subtitle").textContent = state.region + " · 조회 기간 상위 " + top.length + "개 상대국 · " + unit;
   $("country-legend").replaceChildren(...palette.map(([code, title, color]) => {
-    const item = document.createElement(code === "other" ? "span" : "button");
+    const item = document.createElement("button");
     const swatch = document.createElement("i");
     swatch.style.background = color;
-    if (code !== "other") {
-      item.type = "button";
-      item.dataset.partnertarget = code;
-      item.setAttribute("aria-pressed", state.partner === code);
-    }
+    item.type = "button";
+    item.dataset.partnertarget = code;
+    item.setAttribute("aria-pressed", state.partner === code);
     item.append(swatch, title);
     return item;
   }));
@@ -321,26 +332,29 @@ function drawCountries(rows) {
 function drawCharts(rows) {
   const [amountFactor, amountUnit] = scaleAmount(rows.map(row => row.amount));
   const [weightFactor, weightUnit] = Math.max(0, ...rows.map(row => row.weight ?? 0)) >= 1e6 ? [1e6, "천 톤"] : [1e3, "톤"];
-  $("trend-title").textContent = latestFlow() + "액과 YoY";
+  $("trend-title").textContent = state.region + " 수출액과 YoY";
   const conversion = state.currency === "KRW" ? " · 월평균 환율" : "";
   drawCombo(rows, "trend", country(state.partner) + " · " + amountUnit + conversion + " · YoY %",
     {key: "amount", factor: amountFactor}, {key: "yoy", format: percent});
-  drawCombo(rows, "weight", weightUnit + " · " + (state.currency === "KRW" ? "원/kg" : "USD/kg"),
-    {key: "weight", factor: weightFactor}, {key: "price", format: compact});
+  $("weight-section").hidden = !rows.some(row => Number.isFinite(row.weight));
+  if (!$("weight-section").hidden) {
+    drawCombo(rows, "weight", weightUnit + " · " + (state.currency === "KRW" ? "원/kg" : "USD/kg"),
+      {key: "weight", factor: weightFactor}, {key: "price", format: compact});
+  }
   drawCountries(rows);
 }
 
 function drawMonthly() {
   const months = availableMonths(), end = selectedMonth(), oldest = months.at(-1);
-  const product = company().products;
-  $("product-field").hidden = product.length < 2;
-  setSelect($("product"), product, state.product);
-  setSelect($("partner"), [["0", "전체 국가"], ...partnerCodes.map(code => [code, country(code)])], state.partner);
+  const choices = partners();
+  if (!choices.includes(state.partner)) state.partner = choices[0] ?? "";
+  setSelect($("partner"), choices.map(code => [code, country(code)]), state.partner);
   setSelect($("reference"), months.map(month => [month, monthName(month)]), end);
-  $("reference").disabled = !end;
+  $("reference-field").hidden = !end;
+  $("partner-field").hidden = !end || choices.length < 2;
   $("monthly-empty").hidden = Boolean(end);
   $("monthly-data").hidden = !end;
-  $("csv").disabled = !end;
+  $("csv").hidden = !end;
   if (!end) return;
 
   drawCards(end);
@@ -382,30 +396,124 @@ function parseCsv(text) {
   return rows;
 }
 
-function decileRows(text) {
-  const [header, ...rows] = parseCsv(text);
-  if (header?.join(",") !== decileHeader || !rows.length) {
-    throw new Error("양식의 열 이름과 실제 데이터 행을 확인해 주세요.");
+const sourceColumns = {
+  month: ["기준월", "수출연월", "연월", "월말기준일"], hsk10: ["hsk", "hsk10자리", "hs코드", "품목코드"],
+  region: ["제조지역", "제조장소시군구", "제조장소"], region_basis: ["지역기준"],
+  partner: ["수출상대국", "상대국", "목적국"], export_usd: ["수출금액(usd)", "수출금액(달러)", "수출액(usd)"],
+  net_kg: ["수출순중량(kg)", "수출중량(kg)", "순중량(kg)"], source: ["출처", "자료출처"],
+  usd_10: ["10일누계(usd)"], usd_20: ["20일누계(usd)"], usd_end: ["월말누계(usd)"]
+};
+const normalizedHeader = name => String(name ?? "").toLowerCase().replace(/\s/g, "");
+const optionalColumns = new Set(["partner", "net_kg"]);
+
+function mappedRows(rawRows, columns) {
+  for (const [index, row] of rawRows.entries()) {
+    const headers = row.map(normalizedHeader);
+    const positions = columns.map(column => headers.findIndex(cell =>
+      cell === column || sourceColumns[column].includes(cell)));
+    if (!positions.every((position, i) => position >= 0 || optionalColumns.has(columns[i]))) continue;
+    return rawRows.slice(index + 1).filter(values => values.some(value => String(value ?? "").trim()))
+      .map(values => positions.map(position => String(values[position] ?? "").trim()));
   }
-  const tickers = new Set(companies.map(item => item.ticker));
+  return [];
+}
+
+let excelLibrary;
+function getExcelLibrary() {
+  excelLibrary ??= new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = "vendor/xlsx.full.min.js";
+    script.onload = () => resolve(globalThis.XLSX);
+    script.onerror = () => reject(new Error("엑셀 읽기 모듈을 불러오지 못했습니다."));
+    document.head.append(script);
+  });
+  return excelLibrary;
+}
+
+async function readTableFile(file, columns) {
+  let rows;
+  if (/\.xlsx?$/i.test(file.name)) {
+    const xlsx = await getExcelLibrary();
+    const book = xlsx.read(await file.arrayBuffer());
+    rows = book.SheetNames.flatMap(name => mappedRows(xlsx.utils.sheet_to_json(book.Sheets[name], {
+      header: 1, raw: false, defval: "", blankrows: false, dateNF: "yyyy-mm-dd"
+    }), columns));
+  } else {
+    rows = mappedRows(parseCsv(await file.text()), columns);
+  }
+  if (!rows.length) throw new Error("양식에 맞는 원자료 행을 찾지 못했습니다.");
+  return rows;
+}
+
+function readNumber(text) {
+  if (!/^(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d+)?$/.test(text ?? "")) {
+    throw new Error("금액과 중량은 0 이상의 숫자로 입력해 주세요.");
+  }
+  const number = Number(text.replaceAll(",", ""));
+  if (!Number.isFinite(number)) throw new Error("금액 또는 중량이 지원 범위를 넘습니다.");
+  return number;
+}
+
+const provinces = {
+  "밀양시": ["경남", "경상남도"], "원주시": ["강원", "강원도", "강원특별자치도"],
+  "익산시": ["전북", "전라북도", "전북특별자치도"], "강릉시": ["강원", "강원도", "강원특별자치도"],
+  "이천시": ["경기", "경기도"], "청주시": ["충북", "충청북도"], "용인시": ["경기", "경기도"],
+  "평택시": ["경기", "경기도"], "화성시": ["경기", "경기도"]
+};
+const regionNames = new Map(Object.entries(provinces).flatMap(([name, areas]) =>
+  [[name, name], ...areas.map(area => [area + name, name])]));
+
+function checkedKey(month, hsk, region, basis, number) {
+  const code = hsk.replace(/[.\s-]/g, "");
+  const location = regionNames.get(region.replace(/\s/g, ""));
+  const key = seriesKey(location, code);
+  const parts = /^(20\d{2})[.\/-]?(0[1-9]|1[0-2])(?:[.\/-]?(\d{2}))?$/.exec(month);
+  const monthEnd = parts && new Date(Date.UTC(Number(parts[1]), Number(parts[2]), 0)).getUTCDate();
+  const validBasis = /^(제조장소|제조장소기준|제조장소우편번호)$/.test(basis.replace(/\s/g, ""));
+  if (!parts || (parts[3] && Number(parts[3]) !== monthEnd) || !validBasis || !allowedKeys.has(key)) {
+    throw new Error(number + "행의 월말 기준·HSK 10자리·제조장소를 확인해 주세요.");
+  }
+  return {key, month: parts[1] + parts[2]};
+}
+
+function exportRows(rows) {
   const output = {};
-  for (const [i, row] of rows.entries()) {
-    const [rawTicker, month, ...rest] = row;
-    const ticker = rawTicker.padStart(6, "0");
-    const [a, b, c, scope, source] = rest;
-    const cumulative = [a, b, c].map(field => field === "" ? null :
-      /^\d+(?:\.\d+)?$/.test(field ?? "") ? Number(field) : NaN);
-    if (row.length !== 7 || !tickers.has(ticker) || !/^20\d{2}(0[1-9]|1[0-2])$/.test(month) || !scope || !source) {
-      throw new Error((i + 2) + "행의 종목코드, YYYYMM, 집계 범위, 출처를 확인해 주세요.");
+  for (const [index, row] of rows.entries()) {
+    const [period, hsk, region, basis, partnerName, amount, weight, source] = row;
+    const number = index + 2;
+    if (row.length !== exportColumns.length || !source) {
+      throw new Error(number + "행의 열 개수와 출처를 확인해 주세요.");
     }
+    const {key, month} = checkedKey(period, hsk, region, basis, number);
+    const entry = output[key] ??= {source, months: {}, partners: new Set()};
+    const monthRows = entry.months[month] ??= Object.create(null);
+    const partner = /^(전체|전체국가|전체상대국|세계|WORLD)$/i.test(partnerName.replace(/\s/g, "")) ? "" : partnerName;
+    if (entry.source !== source || Object.hasOwn(monthRows, partner)) {
+      throw new Error(number + "행에 다른 출처나 중복 상대국이 있습니다.");
+    }
+    monthRows[partner] = [readNumber(amount), weight ? readNumber(weight) : null];
+    entry.partners.add(partner);
+  }
+  return output;
+}
+
+function decileRows(rows) {
+  const output = {};
+  for (const [index, row] of rows.entries()) {
+    const [period, hsk, region, basis, a, b, c, source] = row;
+    const number = index + 2;
+    if (row.length !== decileColumns.length || !source) {
+      throw new Error(number + "행의 열 개수와 출처를 확인해 주세요.");
+    }
+    const {key, month} = checkedKey(period, hsk, region, basis, number);
+    const cumulative = [a, b, c].map(field => field === "" ? null : readNumber(field));
     const reported = cumulative.filter(value => value !== null);
-    if (!reported.length || reported.some((value, index) =>
-      !Number.isFinite(value) || value < (reported[index - 1] ?? 0))) {
-      throw new Error((i + 2) + "행의 누계는 0 이상이며 시점이 지날수록 작아질 수 없습니다.");
+    if (!reported.length || reported.some((value, i) => value < (reported[i - 1] ?? 0))) {
+      throw new Error(number + "행의 누계는 시점이 지날수록 작아질 수 없습니다.");
     }
-    const item = output[ticker] ??= {scope, source, months: {}};
-    if (item.months[month] || item.scope !== scope || item.source !== source) {
-      throw new Error((i + 2) + "행의 월 중복 또는 종목별 집계 범위·출처 변경을 확인해 주세요.");
+    const item = output[key] ??= {source, months: {}};
+    if (item.months[month] || item.source !== source) {
+      throw new Error(number + "행에 다른 출처나 중복 기준월이 있습니다.");
     }
     item.months[month] = cumulative;
   }
@@ -413,17 +521,17 @@ function decileRows(text) {
 }
 
 function drawDecile() {
-  const dataset = state.deciles[state.ticker];
+  const dataset = state.deciles[selectedKey()];
   $("decile-controls").hidden = !dataset;
   $("decile-chart-wrap").hidden = !dataset;
   $("decile-amount-head").textContent = "누계 (" + state.currency + ")";
   const result = $("decile-result");
   if (!dataset) {
-    result.textContent = "수출 누계 CSV를 열어 비교하세요.";
+    result.textContent = "수출 누계 원자료를 열어 비교하세요.";
     return;
   }
   activeButtons("cutoff", state.cutoff);
-  result.textContent = dataset.scope + " · " + dataset.source + " · 현재 브라우저 세션";
+  result.textContent = "출처 " + dataset.source;
   if (state.view !== "decile") return;
 
   const last = ["10", "20", "end"].indexOf(state.cutoff);
@@ -501,9 +609,11 @@ function drawDecile() {
 
 function render() {
   const item = company();
-  $("company").textContent = item.name;
-  $("series-label").textContent = item.products.find(([code]) => code === state.product)[1] + " · 한국 전체 품목 통관";
-  for (const [attribute, key] of [["ticker","ticker"],["currency","currency"],["view","view"],["flow","flow"],["grain","grain"],
+  $("company").textContent = state.region + " " + productName() + " 수출";
+  $("series-label").textContent = item.name + " 추적 · HSK " + state.product;
+  setSelect($("region"), item.regions.map(region => [region, region]), state.region);
+  setSelect($("product"), item.products.map(([code, label]) => [code, label + " " + code]), state.product);
+  for (const [attribute, key] of [["ticker","ticker"],["currency","currency"],["view","view"],["grain","grain"],
       ["table-grain","tableGrain"],["range","range"],["country-mode","countryMode"]]) {
     activeButtons(attribute, state[key]);
   }
@@ -560,12 +670,15 @@ document.addEventListener("click", event => {
     drawerPinned = false;
     companyPanel(false);
   }
-  const button = event.target.closest("button[data-ticker],button[data-flow],button[data-view],button[data-currency],button[data-grain],button[data-table-grain],button[data-range],button[data-country-mode],button[data-partnertarget],button[data-cutoff]");
+  const button = event.target.closest("button[data-ticker],button[data-view],button[data-currency],button[data-grain],button[data-table-grain],button[data-range],button[data-country-mode],button[data-partnertarget],button[data-cutoff]");
   if (!button) return;
   const [key, value] = Object.entries(button.dataset)[0];
   if (key === "ticker") {
     state.ticker = value;
-    if (!company().products.some(([code]) => code === state.product)) state.product = company().products[0][0];
+    state.product = company().products[0][0];
+    state.region = company().regions[0];
+    state.month = "";
+    state.partner = "";
     $("decile-status").textContent = "";
     $("company-search").value = "";
     filterCompanies();
@@ -576,48 +689,68 @@ document.addEventListener("click", event => {
     state[key === "partnertarget" ? "partner" : key] = value;
   }
   render();
-  if (key === "partnertarget") $("country-legend").querySelector('[data-partnertarget="' + value + '"]')?.focus();
+  if (key === "partnertarget") {
+    Array.from($("country-legend").children).find(item => item.dataset.partnertarget === value)?.focus();
+  }
 });
-for (const id of ["product", "partner", "reference"]) {
+for (const id of ["product", "region", "partner", "reference"]) {
   $(id).addEventListener("change", event => {
     state[id === "reference" ? "month" : id] = event.target.value;
+    if (id === "product" || id === "region") {
+      state.month = "";
+      state.partner = "";
+    }
     render();
   });
 }
 $("csv").addEventListener("click", () => {
   const end = selectedMonth();
   const months = shownMonths(end, availableMonths().at(-1));
-  const cols = ["company", "hsk10", "partner", "flow", "month", "usd", "krw", "krw_per_usd", "yoy_pct", "mom_pct", "net_kg", "source"];
-  const rows = months.map(month => {
+  const rows = months.flatMap(month => {
     const entry = valueFor(month);
-    const krw = amountIn(entry?.[0], month, "KRW");
-    const usdYoy = change(entry?.[0], valueFor(offsetMonth(month, -12))?.[0]);
-    const usdMom = change(entry?.[0], valueFor(offsetMonth(month, -1))?.[0]);
-    return [company().name, state.product, country(state.partner), state.flow, month, entry?.[0],
-      krw === null ? null : Math.round(krw), rate(month), usdYoy?.toFixed(2), usdMom?.toFixed(2), entry?.[1], data.source];
+    if (!entry) return [];
+    const krw = amountIn(entry[0], month, "KRW");
+    return [[month, state.product, state.region, "제조장소", state.partner, entry[0],
+      entry[1], dataset().source, krw === null ? null : Math.round(krw), rate(month)]];
   });
-  download(company().name + "-" + state.flow + ".csv", [cols, ...rows]);
+  download(state.region + "-" + productName() + "-수출.csv", [[...exportColumns, "export_krw", "krw_per_usd"], ...rows]);
 });
-$("template").addEventListener("click", () => download("decile-template.csv", [decileHeader.split(",")]));
-$("decile-file").addEventListener("change", async event => {
-  const file = event.target.files[0];
-  if (!file) return;
-  try {
-    if (file.size > 2_000_000) throw new Error("2MB 이하 CSV를 선택해 주세요.");
-    const imported = decileRows(await file.text());
-    Object.assign(state.deciles, imported);
-    $("decile-status").textContent = Object.keys(imported).length + "개 종목의 누계 데이터를 읽었습니다.";
-    drawDecile();
-  } catch (error) {
-    $("decile-status").textContent = error.message;
+$("export-template").addEventListener("click", () => download("월별수출-양식.csv", [exportColumns]));
+$("template").addEventListener("click", () => download("10일수출-양식.csv", [decileColumns]));
+function readFile(id, status, columns, parse, apply) {
+  $(id).addEventListener("change", async event => {
+    const file = event.target.files[0];
+    if (!file) return;
+    try {
+      if (file.size > 20_000_000) throw new Error("20MB 이하 원자료를 선택해 주세요.");
+      const records = parse(await readTableFile(file, columns));
+      apply(records);
+      $(status).textContent = Object.keys(records).length + "개 제조지역·품목 조합을 읽었습니다.";
+      render();
+    } catch (error) {
+      $(status).textContent = error.message;
+    }
+    event.target.value = "";
+  });
+}
+readFile("export-file", "export-status", exportColumns, exportRows, records => {
+  Object.assign(state.exports, records);
+  state.month = "";
+  if (!dataset()) {
+    const [key] = Object.keys(records);
+    const [region, hsk] = key.split("/");
+    const first = companies.find(c => c.regions.includes(region) && c.products.some(([code]) => code === hsk));
+    state.ticker = first.ticker;
+    state.region = region;
+    state.product = hsk;
+    state.partner = "";
   }
-  event.target.value = "";
 });
+readFile("decile-file", "decile-status", decileColumns, decileRows, records => { Object.assign(state.deciles, records); });
 window.addEventListener("resize", () => {
   if (state.view === "monthly") {
     const end = selectedMonth();
     if (end) drawCharts(periods(shownMonths(end, availableMonths().at(-1)), state.grain));
   } else drawDecile();
 });
-$("snapshot-date").textContent = data.asOf ? "수집 " + data.asOf : "";
 render();

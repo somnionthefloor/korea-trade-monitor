@@ -80,3 +80,8 @@ tbody tr:first-child{background:#f3f8ff}
 footer{display:flex;justify-content:space-between;align-items:start;gap:10px;color:var(--muted);font-size:13px;padding:2px 2px 12px}
 footer p{margin:5px 0}footer summary{width:max-content;font-weight:700}
 @media(max-width:720px){:root{--rail:44px}.rail-button{width:35px}.shell{padding:17px 11px}.panel{padding:12px 10px}.header p,.field{font-size:13px}.panel-head{flex-wrap:wrap}.chart-controls{justify-content:flex-start}.toolbar{gap:8px}.push{margin-left:0}.kpis{gap:5px}.kpi{padding:9px 7px}.kpi div,.kpi small{font-size:12px}#partner{max-width:126px}.segmented button{padding-inline:7px}}
+
+.scope-tools{padding:5px 0 10px}
+.file-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#export-status:not(:empty){font-size:14px;margin:0 0 8px}
+#monthly-empty p{margin-top:5px}

@@ -1,29 +1,34 @@
-# 한국 수출입 트래커
+# 한국 수출 트래커
 
-삼양식품, 파마리서치, SK하이닉스, 삼성전자와 관련된 한국 품목의 월별·국가별 통관 통계입니다.
+등록된 제조장소 시·군·구와 HSK 10자리가 함께 확인되는 월말 수출 자료를 조회합니다. 자료에 해당 지역과 품목의 다른 제조사 실적이 포함될 수 있습니다.
 
-## 실행과 게시
+## 원자료
 
-로컬에서는 `python3 -m http.server 8772 --directory docs`로 실행합니다. GitHub Pages 게시 소스는 `main` 브랜치의 `/docs`입니다.
+[TRASS 주문형 통계](https://www.bandtrass.or.kr/madeOrder.do?viewCode=MAD00000)에서 제조장소 시·군·구 × HSK 10자리 × 월 기준 수출 금액(USD)의 교부 범위와 조건을 확인합니다. 상대국 또는 순중량이 제공되는 경우 해당 열을 함께 요청합니다. 잠정치와 확정치를 비교하려면 자료의 수리일 기준 및 발행 시점을 확인합니다.
 
-## 월별 갱신
+브라우저에서 엑셀(.xlsx, .xls) 또는 UTF-8 CSV를 열 수 있습니다. 제공기관의 실제 엑셀 레이아웃이 다르면 원본 열을 아래 양식에 대응시켜 저장합니다. 화면에서 열 이름을 담은 양식을 내려받을 수 있습니다.
 
-1. [관세청 수출입무역통계](https://tradedata.go.kr/cts/index.do)에서 HSK 1902301010, 3304999000, 8542321010, 8542321030의 월별·수리일·kg 기준 품목별 및 품목별+국가별 CSV를 받습니다. 국가 조건은 비워 모든 공표 상대국을 조회합니다. 수정 신고를 반영하려면 갱신하려는 최근 월을 양쪽 파일에 동일하게 포함합니다.
-2. [한국은행 ECOS](https://ecos.bok.or.kr/)의 731Y004, 0000001, 0000100에서 원/달러 월평균 매매기준율을 확인합니다. `month,krw_per_usd` 헤더의 CSV에 월을 YYYYMM 형식으로 적습니다.
-3. 아래 명령으로 갱신하고 `docs/snapshot.js`를 커밋합니다. 갱신 대상 월의 기존 행은 해당 월의 새 원본으로 교체합니다.
+| 열 | 의미 |
+|---|---|
+| month | YYYYMM, YYYY-MM 또는 해당 월의 말일 |
+| hsk10 | 원자료의 HSK 10자리 |
+| region | 제조장소 시·군·구 |
+| region_basis | `제조장소` |
+| partner | 상대국. 원자료 자체의 상대국 전체 합계 행은 빈 칸 |
+| export_usd | 수출액(달러). 천 달러로 제공됐다면 먼저 USD로 단위를 변환 |
+| net_kg | 순중량(kg). 제공되지 않을 때 빈 칸 |
+| source | 교부 자료명과 기준 |
+
+선택한 파일은 현재 탭에서만 처리합니다. 교부 원자료를 공개 저장소에 넣지 않습니다. <https://docs.sheetjs.com/>의 SheetJS CE 0.20.3을 엑셀을 열 때 사용합니다.
+
+10일 비교는 `month,hsk10,region,region_basis,usd_10,usd_20,usd_end,source` 형식의 누계표를 사용합니다. 기간별 누계 중 미발표 값은 빈 칸으로 둡니다.
+
+## 원화 환산
+
+[한국은행 ECOS](https://ecos.bok.or.kr/) 731Y004의 원/달러 월평균 매매기준율을 적용합니다. 분기·연간 원화는 월별 환산액을 합산합니다. 필요한 월의 환율은 아래 명령으로 갱신합니다.
 
 ```sh
-python3 scripts/import_customs.py --update \
-  --world path/to/world.csv \
-  --partners path/to/partner.csv \
-  --fx path/to/usdkrw.csv \
-  --as-of YYYY-MM-DD
+python3 scripts/update_exchange_rates.py --start YYYYMM --end YYYYMM
 ```
 
-전체 스냅샷을 다시 만들 때는 모든 대상 월의 양쪽 CSV와 환율을 지정하고 `--update`를 생략합니다.
-
-## 집계
-
-관세청 원자료의 천 달러를 USD로 환산합니다. 원화는 해당 월 USD 금액에 그 달의 ECOS 월평균 매매기준율을 곱한 추정치입니다. 분기·연간 원화는 월별 환산액을 합산합니다. YoY는 전년의 같은 월 구간과 비교합니다. 단가는 금액을 순중량으로 나눈 값입니다. 전국 합계는 관세청 품목별 파일을 사용합니다. 국가별 집계는 공표된 행을 합산합니다.
-
-10일 단위 탭은 사용자가 고른 수출 누계 CSV를 브라우저 안에서 처리합니다.
+로컬 실행은 `python3 -m http.server 8774 --directory docs`입니다. GitHub Pages 게시 소스는 `main` 브랜치의 `/docs`입니다.
